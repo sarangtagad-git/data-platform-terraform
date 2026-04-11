@@ -1,0 +1,20 @@
+# Terraform downloaded providers and plugins — auto-generated, not needed in git
+**/.terraform/
+
+# Terraform state files — contains sensitive infrastructure data
+*.tfstate
+*.tfstate.backup
+
+# Terraform plan files
+*.tfplan
+
+# Terraform variable files with secrets
+*.tfvars.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
