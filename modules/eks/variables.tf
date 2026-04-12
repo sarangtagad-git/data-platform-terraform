@@ -26,7 +26,7 @@ variable "private_subnet_ids" {
 variable "cluster_version" {
   description = "What is your EKS version going to be"  
   type = string
-  default = "1.29"
+  default = "1.32"
 }
 
 variable "node_groups" {

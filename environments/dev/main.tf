@@ -116,6 +116,7 @@ module "monitoring" {
 
   project_name           = var.project_name
   environment            = var.environment
+  aws_region             = var.aws_region
   eks_cluster_name       = module.eks.cluster_name
   mwaa_environment_name  = "${var.project_name}-${var.environment}-airflow"
   dags_bucket_name       = "${var.project_name}-${var.environment}-airflow-dags"

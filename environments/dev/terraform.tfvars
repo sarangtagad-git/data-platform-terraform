@@ -14,7 +14,7 @@ single_nat_gateway = true
 enable_flow_logs = true
 
 # EKS
-cluster_version = "1.29"
+cluster_version = "1.32"
 node_groups = {
   primary = {
     instance_type = "t3.small"

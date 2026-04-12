@@ -2,7 +2,7 @@
 # S3 BUCKET
 # ------------------------------------------------------------------------------
 resource "aws_s3_bucket" "main" {
-  bucket        = "${var.project_name}-${var.environment}-data-lake"
+  bucket        = "${var.project_name}-${var.environment}-data-lake-${data.aws_caller_identity.current.account_id}"
   force_destroy = var.force_destroy
 
   tags = merge(local.common_tags, {
