@@ -16,6 +16,10 @@ env:
   AWS_REGION: "ap-south-1"
   WORKING_DIR: "environments/dev"
 
+concurrency:
+  group: terraform-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   plan:
     name: Terraform plan
