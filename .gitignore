@@ -7,6 +7,8 @@
 
 # Terraform plan files
 *.tfplan
+tfplan
+tfplan.txt
 
 # Terraform variable files with secrets
 *.tfvars.json
