@@ -132,10 +132,8 @@ resource "aws_iam_role_policy" "mwaa" {
   }) 
 }
 
-resource "aws_iam_role_policy_attachment" "mwaa" {
-  role       = aws_iam_role.mwaa.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonMWAAServiceRolePolicy"
-}
+# Note: AmazonMWAAServiceRolePolicy is a service-linked policy — cannot be attached to custom roles
+# All required MWAA permissions are covered by the inline policy above (aws_iam_role_policy.mwaa)
 
 # ------------------------------------------------------------------------------
 # GITHUB ACTIONS OIDC ROLE
