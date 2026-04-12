@@ -62,6 +62,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         type = "metric"
         properties = {
           title   = "EKS CPU Utilization"
+          region  = var.aws_region
           metrics = [["AWS/EKS", "CPUUtilization", "ClusterName", var.eks_cluster_name]]
           period  = 300
           stat    = "Average"
@@ -71,6 +72,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         type = "metric"
         properties = {
           title   = "MWAA Scheduler Heartbeat"
+          region  = var.aws_region
           metrics = [["AWS/MWAA", "Heartbeat", "Environment", var.mwaa_environment_name]]
           period  = 300
           stat    = "Average"
@@ -80,6 +82,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         type = "metric"
         properties = {
           title   = "DAGs Bucket 4xx Errors"
+          region  = var.aws_region
           metrics = [["AWS/S3", "4xxErrors", "BucketName", var.dags_bucket_name, "FilterId", "EntireBucket"]]
           period  = 300
           stat    = "Sum"
@@ -89,6 +92,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         type = "metric"
         properties = {
           title   = "Data Lake Bucket 4xx Errors"
+          region  = var.aws_region
           metrics = [["AWS/S3", "4xxErrors", "BucketName", var.data_lake_bucket_name, "FilterId", "EntireBucket"]]
           period  = 300
           stat    = "Sum"

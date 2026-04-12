@@ -13,6 +13,11 @@ variable "environment" {
   }
 }
 
+variable "aws_region" {
+  description = "AWS Region value needs to be set in each Cloudwatch Dashboard widget"
+  type        = string
+}
+
 variable "eks_cluster_name" {
   description = "Name of the EKS cluster to monitor"
   type        = string
