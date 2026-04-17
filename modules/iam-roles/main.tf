@@ -97,8 +97,16 @@ resource "aws_iam_role_policy" "mwaa" {
 
       # Permission 1: Read DAGs and requirements from S3
       {
-        Effect   = "Allow"
-        Action   = ["s3:GetObject", "s3:ListBucket"]
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:GetObjectVersion",
+          "s3:ListBucket",
+          "s3:ListBucketVersions",
+          "s3:GetBucketPublicAccessBlock",
+          "s3:GetAccountPublicAccessBlock",
+          "s3:GetBucketLocation"
+        ]
         Resource = "*"
       },
 
