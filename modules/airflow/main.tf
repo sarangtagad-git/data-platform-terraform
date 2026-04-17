@@ -84,7 +84,7 @@ resource "aws_mwaa_environment" "main" {
   max_workers = var.max_workers
 
   network_configuration {
-    subnet_ids         = var.private_subnet_ids
+    subnet_ids         = slice(var.private_subnet_ids, 0,2)
     security_group_ids = [aws_security_group.mwaa.id]
   }
 
