@@ -18,7 +18,7 @@ cluster_version = "1.32"
 node_groups = {
   primary = {
     instance_type = "t3.small"
-    desired_size = 2
+    desired_size = 1
     min_size = 1
     max_size = 3
   }
