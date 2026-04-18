@@ -82,6 +82,7 @@ resource "aws_mwaa_environment" "main" {
 
   min_workers = var.min_workers
   max_workers = var.max_workers
+  webserver_access_mode = "PUBLIC_ONLY"
 
   network_configuration {
     subnet_ids         = slice(var.private_subnet_ids, 0,2)
