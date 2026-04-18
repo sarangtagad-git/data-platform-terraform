@@ -95,7 +95,14 @@ resource "aws_iam_role_policy" "mwaa" {
     Version = "2012-10-17"
     Statement = [
 
-      # Permission 1: Read DAGs and requirements from S3
+      # Permission 1: MWAA publish its own metrics
+      {
+        Effect   = "Allow"
+        Action   = ["airflow:PublishMetrics"]
+        Resource = "*"
+      },
+
+      # Permission 2: Read DAGs and requirements from S3
       {
         Effect = "Allow"
         Action = [
@@ -110,7 +117,7 @@ resource "aws_iam_role_policy" "mwaa" {
         Resource = "*"
       },
 
-      # Permission 2: Write logs to CloudWatch
+      # Permission 3: Write logs to CloudWatch
       {
         Effect = "Allow"
         Action = [
@@ -118,15 +125,13 @@ resource "aws_iam_role_policy" "mwaa" {
           "logs:CreateLogStream",
           "logs:PutLogEvents",
           "logs:GetLogEvents",
-          "logs:GetLogRecord"
+          "logs:GetLogRecord",
+          "logs:GetLogDelivery",
+          "logs:ListLogDeliveries",
+          "logs:PutRetentionPolicy",
+          "logs:DescribeLogGroups",
+          "logs:DescribeResourcePolicies"
         ]
-        Resource = "*"
-      },
-
-      # Permission 3: Read secrets (DB passwords, API keys)
-      {
-        Effect   = "Allow"
-        Action   = ["secretsmanager:GetSecretValue"]
         Resource = "*"
       },
 
@@ -135,9 +140,50 @@ resource "aws_iam_role_policy" "mwaa" {
         Effect   = "Allow"
         Action   = ["cloudwatch:PutMetricData"]
         Resource = "*"
+      },
+
+      # Permission 5: SQS for internal Celery task queue
+      {
+        Effect = "Allow"
+        Action = [
+          "sqs:ChangeMessageVisibility",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes",
+          "sqs:GetQueueUrl",
+          "sqs:ReceiveMessage",
+          "sqs:SendMessage"
+        ]
+        Resource = "arn:aws:sqs:ap-south-1:*:airflow-celery-*"
+      },
+
+      # Permission 6: KMS for encryption used by SQS and S3
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt",
+          "kms:DescribeKey",
+          "kms:GenerateDataKey*",
+          "kms:Encrypt"
+        ]
+        Resource = "*"
+        Condition = {
+          StringLike = {
+            "kms:ViaService" = [
+              "sqs.ap-south-1.amazonaws.com",
+              "s3.ap-south-1.amazonaws.com"
+            ]
+          }
+        }
+      },
+
+      # Permission 7: Read secrets
+      {
+        Effect   = "Allow"
+        Action   = ["secretsmanager:GetSecretValue"]
+        Resource = "*"
       }
     ]
-  }) 
+  })
 }
 
 # Note: AmazonMWAAServiceRolePolicy is a service-linked policy — cannot be attached to custom roles
@@ -154,6 +200,7 @@ resource "aws_iam_openid_connect_provider" "github" {
 
 resource "aws_iam_role" "github_actions" {
   name = "${var.project_name}-${var.environment}-github-actions"
+  max_session_duration = 7200   # 2 Hours so token should live that long
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
