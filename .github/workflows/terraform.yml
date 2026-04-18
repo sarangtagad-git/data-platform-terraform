@@ -45,6 +45,7 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/data-platform-dev-github-actions
           aws-region: ${{ env.AWS_REGION }}
+          role-duration-seconds: 7200
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -81,6 +82,7 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/data-platform-dev-github-actions
           aws-region: ${{ env.AWS_REGION }}
+          role-duration-seconds: 7200
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -109,6 +111,7 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/data-platform-dev-github-actions
           aws-region: ${{ env.AWS_REGION }}
+          role-duration-seconds: 7200
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
