@@ -18,8 +18,8 @@ locals {
     }
     mwaa_heartbeat = {
       alarm_name = "${var.project_name}-${var.environment}-mwaa-heartbeat"
-      metric_name = "Heartbeat"
-      namespace = "AWS/MWAA"
+      metric_name = "SchedulerHeartbeat"
+      namespace   = "AmazonMWAA"
       threshold = 1
       dimensions = {
         Environment = var.mwaa_environment_name

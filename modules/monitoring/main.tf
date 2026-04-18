@@ -73,7 +73,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         properties = {
           title   = "MWAA Scheduler Heartbeat"
           region  = var.aws_region
-          metrics = [["AWS/MWAA", "Heartbeat", "Environment", var.mwaa_environment_name]]
+          metrics = [["AmazonMWAA", "SchedulerHeartbeat", "Environment", var.mwaa_environment_name, "Function", "Scheduler"]]
           period  = 300
           stat    = "Average"
         }
