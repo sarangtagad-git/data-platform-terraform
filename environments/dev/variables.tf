@@ -98,7 +98,7 @@ variable "node_groups" {
 variable "airflow_version" {
   description = "Version of Apache Airflow to use"
   type        = string
-  default     = "2.8.1"
+  default     = "3.0.6"
 }
 
 variable "environment_class" {

@@ -32,7 +32,7 @@ node_groups = {
 }
 
 # Airflow
-airflow_version = "2.8.1"
+airflow_version = "3.0.6"
 environment_class = "mw1.small"
 min_workers = 1
 max_workers = 3
