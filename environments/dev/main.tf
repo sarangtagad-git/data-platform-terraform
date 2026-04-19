@@ -203,8 +203,8 @@ resource "aws_iam_role_policy" "etl_pod_s3" {
       Effect = "Allow"
       Action = ["s3:PutObject", "s3:GetObject", "s3:ListBucket"]
       Resource = [
-        "arn:aws:s3:::${var.project_name}-${var.environment}-data-lake",
-        "arn:aws:s3:::${var.project_name}-${var.environment}-data-lake/*"
+        module.s3_data_lake.bucket_arn,
+        "${module.s3_data_lake.bucket_arn}/*"
       ]
     }]
   })

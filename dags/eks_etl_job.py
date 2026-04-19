@@ -33,11 +33,11 @@ from kubernetes.client import models as k8s
 REGION            = "ap-south-1"
 KUBECONFIG_SECRET = "data-platform-dev-eks-kubeconfig"
 KUBECONFIG_PATH   = "/tmp/eks-kubeconfig.yaml"
-DATA_LAKE_BUCKET  = "data-platform-dev-data-lake"
 
-# Resolve ECR image URI at parse time using STS (runs on the scheduler)
-_account_id = boto3.client("sts", region_name=REGION).get_caller_identity()["Account"]
-ECR_IMAGE = f"{_account_id}.dkr.ecr.{REGION}.amazonaws.com/data-platform-dev-etl-job:latest"
+# Resolve account ID at parse time using STS (runs on the scheduler)
+_account_id      = boto3.client("sts", region_name=REGION).get_caller_identity()["Account"]
+ECR_IMAGE        = f"{_account_id}.dkr.ecr.{REGION}.amazonaws.com/data-platform-dev-etl-job:latest"
+DATA_LAKE_BUCKET = f"data-platform-dev-data-lake-{_account_id}"
 
 
 # ---------------------------------------------------------------------------
