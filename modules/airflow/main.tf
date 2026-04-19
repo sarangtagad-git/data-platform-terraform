@@ -33,9 +33,21 @@ resource "aws_s3_bucket_public_access_block" "dags" {
 # MWAA requires the dags/ prefix to exist in S3 before environment creation
 # =============================================================================
 resource "aws_s3_object" "dags_folder" {
-  bucket = aws_s3_bucket.dags.id
-  key    = "dags/"
+  bucket  = aws_s3_bucket.dags.id
+  key     = "dags/"
   content = ""
+}
+
+# =============================================================================
+# requirements.txt
+# Extra Python packages installed into MWAA on environment startup
+# Listed packages are pip installed into the MWAA workers and scheduler
+# =============================================================================
+resource "aws_s3_object" "requirements" {
+  bucket = aws_s3_bucket.dags.id
+  key    = "requirements.txt"
+  source = "${path.root}/../../requirements.txt"
+  etag   = filemd5("${path.root}/../../requirements.txt")
 }
 
 # =============================================================================
@@ -74,8 +86,9 @@ resource "aws_security_group" "mwaa" {
 resource "aws_mwaa_environment" "main" {
   name              = "${var.project_name}-${var.environment}-airflow"
   source_bucket_arn = aws_s3_bucket.dags.arn
-  dag_s3_path       = "dags/"
-  environment_class = var.environment_class
+  dag_s3_path           = "dags/"
+  requirements_s3_path  = "requirements.txt"
+  environment_class     = var.environment_class
 
   execution_role_arn = var.mwaa_execution_role_arn
   airflow_version    = var.airflow_version
