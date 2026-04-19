@@ -83,6 +83,26 @@ resource "aws_eks_addon" "main" {
 }
 
 # =============================================================================
+# EKS OIDC Provider
+# Prerequisite for IRSA — tells AWS IAM to trust tokens issued by this cluster
+# Pods can then exchange their Kubernetes token for temporary AWS credentials
+# without relying on the node instance profile (blocked by IMDSv2 hop limit)
+# =============================================================================
+data "tls_certificate" "eks" {
+  url = aws_eks_cluster.main.identity[0].oidc[0].issuer
+}
+
+resource "aws_iam_openid_connect_provider" "eks" {
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = [data.tls_certificate.eks.certificates[0].sha1_fingerprint]
+  url             = aws_eks_cluster.main.identity[0].oidc[0].issuer
+
+  tags = merge(local.common_tags, {
+    Name = "${var.project_name}-${var.environment}-eks-oidc"
+  })
+}
+
+# =============================================================================
 # EKS Access Entry for Admin IAM User
 # Grants the local terraform-admin IAM user kubectl access to the cluster
 # Without this, only the GitHub Actions OIDC role (cluster creator) has access

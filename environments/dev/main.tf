@@ -6,6 +6,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~> 4.0"
+    }
   }
 }
 
@@ -155,4 +159,53 @@ module "monitoring" {
   cpu_alarm_threshold    = var.cpu_alarm_threshold
   memory_alarm_threshold = var.memory_alarm_threshold
   tags                   = var.tags
+}
+
+# =============================================================================
+# IRSA — ETL Pod IAM Role
+# Gives the EKS etl-job pod its own AWS credentials via IRSA so it can write
+# to the S3 data lake. Placed here (not in iam-roles module) to avoid a
+# circular dependency: module.eks depends on module.iam_roles for cluster role,
+# so module.iam_roles cannot also depend on module.eks for the OIDC provider.
+# =============================================================================
+resource "aws_iam_role" "etl_pod" {
+  name = "${var.project_name}-${var.environment}-etl-pod"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Federated = module.eks.oidc_provider_arn }
+      Action    = "sts:AssumeRoleWithWebIdentity"
+      Condition = {
+        StringEquals = {
+          "${module.eks.oidc_provider_url}:sub" = "system:serviceaccount:airflow:etl-job-sa"
+          "${module.eks.oidc_provider_url}:aud" = "sts.amazonaws.com"
+        }
+      }
+    }]
+  })
+
+  tags = {
+    Name        = "${var.project_name}-${var.environment}-etl-pod"
+    Environment = var.environment
+    ManagedBy   = "terraform"
+  }
+}
+
+resource "aws_iam_role_policy" "etl_pod_s3" {
+  name = "${var.project_name}-${var.environment}-etl-pod-s3"
+  role = aws_iam_role.etl_pod.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = ["s3:PutObject", "s3:GetObject", "s3:ListBucket"]
+      Resource = [
+        "arn:aws:s3:::${var.project_name}-${var.environment}-data-lake",
+        "arn:aws:s3:::${var.project_name}-${var.environment}-data-lake/*"
+      ]
+    }]
+  })
 }

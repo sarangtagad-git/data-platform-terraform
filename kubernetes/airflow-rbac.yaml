@@ -29,7 +29,7 @@ metadata:
   namespace: airflow
 rules:
   - apiGroups: [""]
-    resources: ["pods", "pods/log"]
+    resources: ["pods", "pods/log","events"]
     verbs: ["get", "list", "watch", "create", "delete", "patch"]
 
 ---
@@ -46,3 +46,17 @@ roleRef:
   kind: Role
   name: airflow-pod-role
   apiGroup: rbac.authorization.k8s.io
+
+---
+# =============================================================================
+# IRSA Service Account
+# The etl-job pod runs with this service account which is annotated with the
+# IAM role ARN. EKS injects temporary AWS credentials into the pod at runtime.
+# =============================================================================
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: etl-job-sa
+  namespace: airflow
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::699651639348:role/data-platform-dev-etl-pod
