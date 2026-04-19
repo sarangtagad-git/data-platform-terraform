@@ -81,3 +81,28 @@ resource "aws_eks_addon" "main" {
 
   depends_on = [aws_eks_node_group.main]
 }
+
+# =============================================================================
+# EKS Access Entry for Admin IAM User
+# Grants the local terraform-admin IAM user kubectl access to the cluster
+# Without this, only the GitHub Actions OIDC role (cluster creator) has access
+# =============================================================================
+resource "aws_eks_access_entry" "admin" {
+  cluster_name  = aws_eks_cluster.main.name
+  principal_arn = var.admin_iam_arn
+  type          = "STANDARD"
+
+  tags = merge(local.common_tags, {
+    Name = "${var.project_name}-${var.environment}-admin-eks-access"
+  })
+}
+
+resource "aws_eks_access_policy_association" "admin" {
+  cluster_name  = aws_eks_cluster.main.name
+  principal_arn = var.admin_iam_arn
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+
+  access_scope {
+    type = "cluster"
+  }
+}

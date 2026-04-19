@@ -71,6 +71,11 @@ variable "enable_flow_logs" {
 # =============================================================================
 # EKS
 # =============================================================================
+variable "admin_iam_arn" {
+  description = "ARN of the IAM user or role that needs kubectl admin access to the EKS cluster"
+  type        = string
+}
+
 variable "cluster_version" {
   description = "Kubernetes version for the EKS cluster"
   type        = string

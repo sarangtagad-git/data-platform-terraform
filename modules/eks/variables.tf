@@ -68,6 +68,11 @@ variable "mwaa_role_arn" {
   type        = string
 }
 
+variable "admin_iam_arn" {
+  description = "ARN of the IAM user or role that needs kubectl admin access to the cluster (e.g. local terraform-admin user)"
+  type        = string
+}
+
 variable "tags" {
   description = "Additional key-value pair tags to be applied to all resources"
   type = map(string)
