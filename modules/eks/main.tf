@@ -59,7 +59,7 @@ resource "aws_eks_node_group" "main" {
 resource "aws_eks_access_entry" "mwaa" {
   cluster_name  = aws_eks_cluster.main.name
   principal_arn = var.mwaa_role_arn
-  username      = "mwaa-user"
+  user_name     = "mwaa-user"
   type          = "STANDARD"
 
   tags = merge(local.common_tags, {
