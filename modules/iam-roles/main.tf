@@ -178,10 +178,17 @@ resource "aws_iam_role_policy" "mwaa" {
         }
       },
 
-      # Permission 7: Read secrets
+      # Permission 7: Read secrets (e.g. EKS kubeconfig stored in Secrets Manager)
       {
         Effect   = "Allow"
         Action   = ["secretsmanager:GetSecretValue"]
+        Resource = "*"
+      },
+
+      # Permission 8: Describe EKS cluster for KubernetesPodOperator
+      {
+        Effect   = "Allow"
+        Action   = ["eks:DescribeCluster"]
         Resource = "*"
       }
     ]

@@ -93,6 +93,21 @@ data-platform-terraform/
 │       ├── locals.tf
 │       └── data.tf
 │
+│   ├── ecr/                       # ECR repository for EKS task container images
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   ├── outputs.tf
+│   │   └── locals.tf
+│   │
+│   └── secrets/                   # Secrets Manager — EKS kubeconfig for MWAA
+│       ├── main.tf
+│       ├── variables.tf
+│       ├── outputs.tf
+│       └── locals.tf
+│
+├── kubernetes/
+│   └── airflow-rbac.yaml          # K8s Namespace + Role + RoleBinding for MWAA pods
+│
 ├── scripts/
 │   ├── upload_dag.py              # Upload DAG files to S3
 │   └── validate_dag.py            # Validate DAG syntax before upload
@@ -136,6 +151,16 @@ data-platform-terraform/
 - Workers auto-scale 1–3 based on task queue depth
 - Self-referencing security group for worker communication
 - Webserver access mode: `PUBLIC_ONLY` (IAM auth protected)
+
+### `ecr`
+- ECR repository for EKS task container images (`etl-job`)
+- Image scanning on push — detects vulnerabilities automatically
+- Lifecycle policy — keeps last 10 images, auto-expires older ones
+
+### `secrets`
+- Stores EKS kubeconfig in AWS Secrets Manager
+- MWAA workers read this at runtime to authenticate with EKS
+- Kubeconfig uses exec-based token auth (`aws eks get-token`) — no static credentials
 
 ### `monitoring`
 - CloudWatch dashboard — MWAA heartbeat, EKS CPU, S3 errors

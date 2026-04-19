@@ -63,6 +63,11 @@ variable "eks_node_group_role_arn" {
   type = string
 }
 
+variable "mwaa_role_arn" {
+  description = "ARN of the MWAA execution IAM role — granted access to EKS cluster via access entry"
+  type        = string
+}
+
 variable "tags" {
   description = "Additional key-value pair tags to be applied to all resources"
   type = map(string)

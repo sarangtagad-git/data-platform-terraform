@@ -1,0 +1,48 @@
+# =============================================================================
+# Airflow RBAC — Kubernetes Namespace + Role + RoleBinding
+#
+# Apply this after EKS cluster is running:
+#   kubectl apply -f kubernetes/airflow-rbac.yaml
+#
+# How it connects to MWAA:
+#   1. Terraform creates an EKS Access Entry mapping the MWAA IAM role
+#      to the Kubernetes username "mwaa-user"
+#   2. This RoleBinding binds "mwaa-user" to the airflow-pod-role
+#   3. The airflow-pod-role grants permission to create/delete/watch pods
+#   4. MWAA workers use this access when executing KubernetesPodOperator tasks
+# =============================================================================
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: airflow
+  labels:
+    managed-by: terraform
+    purpose: airflow-tasks
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: airflow-pod-role
+  namespace: airflow
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list", "watch", "create", "delete", "patch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: airflow-pod-rolebinding
+  namespace: airflow
+subjects:
+  - kind: User
+    name: mwaa-user        # matches the username set in aws_eks_access_entry
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: airflow-pod-role
+  apiGroup: rbac.authorization.k8s.io

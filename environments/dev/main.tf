@@ -83,6 +83,7 @@ module "eks" {
   node_groups             = var.node_groups
   eks_cluster_role_arn    = module.iam_roles.eks_cluster_role_arn
   eks_node_group_role_arn = module.iam_roles.eks_node_group_role_arn
+  mwaa_role_arn           = module.iam_roles.mwaa_role_arn
   tags                    = var.tags
 }
 
@@ -104,6 +105,34 @@ module "airflow" {
   min_workers             = var.min_workers
   max_workers             = var.max_workers
   tags                    = var.tags
+}
+
+# =============================================================================
+# ECR
+# Creates Docker image repository for EKS task containers (KubernetesPodOperator)
+# =============================================================================
+module "ecr" {
+  source = "../../modules/ecr"
+
+  project_name = var.project_name
+  environment  = var.environment
+  tags         = var.tags
+}
+
+# =============================================================================
+# Secrets
+# Stores EKS kubeconfig in Secrets Manager so MWAA can authenticate to EKS
+# =============================================================================
+module "secrets" {
+  source = "../../modules/secrets"
+
+  project_name           = var.project_name
+  environment            = var.environment
+  aws_region             = var.aws_region
+  cluster_name           = module.eks.cluster_name
+  cluster_endpoint       = module.eks.cluster_endpoint
+  cluster_ca_certificate = module.eks.cluster_ca_certificate
+  tags                   = var.tags
 }
 
 # =============================================================================

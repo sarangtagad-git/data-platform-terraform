@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Data Platform Architecture</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #1a1a2e;
+      display: flex;
+      justify-content: center;
+      padding: 30px 20px;
+    }
+
+    .page { width: 1400px; }
+
+    h1 {
+      text-align: center;
+      color: #ffffff;
+      font-size: 22px;
+      margin-bottom: 6px;
+      letter-spacing: 1px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #aaaaaa;
+      font-size: 13px;
+      margin-bottom: 24px;
+    }
+
+    .outer {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    /* ── Left col: GitHub ─────────────────────────── */
+    .left-col {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 140px;
+    }
+
+    /* ── AWS Cloud ────────────────────────────────── */
+    .aws-cloud {
+      flex: 1;
+      border: 2px solid #FF9900;
+      border-radius: 12px;
+      padding: 18px;
+      background: #16213e;
+      position: relative;
+    }
+
+    .aws-badge {
+      position: absolute;
+      top: -13px;
+      left: 16px;
+      background: #FF9900;
+      color: #000;
+      font-weight: bold;
+      font-size: 12px;
+      padding: 2px 10px;
+      border-radius: 4px;
+    }
+
+    .aws-top-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    /* ── VPC + right services row ─────────────────── */
+    .vpc-and-services {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 14px;
+      align-items: stretch;
+    }
+
+    /* ── VPC ──────────────────────────────────────── */
+    .vpc {
+      flex: 3;
+      border: 2px solid #5D8AA8;
+      border-radius: 10px;
+      padding: 14px;
+      background: #0f3460;
+      position: relative;
+    }
+
+    .vpc-badge {
+      position: absolute;
+      top: -12px;
+      left: 14px;
+      background: #5D8AA8;
+      color: #fff;
+      font-size: 11px;
+      font-weight: bold;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .vpc-inner {
+      display: flex;
+      gap: 12px;
+    }
+
+    /* ── Right services column ────────────────────── */
+    .right-services {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .service-connection {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .conn-arrow {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10px;
+    }
+
+    .conn-line {
+      flex: 1;
+      height: 1px;
+      border-top: 2px dashed;
+      position: relative;
+    }
+
+    .conn-label {
+      font-size: 10px;
+      text-align: center;
+      padding: 2px 4px;
+      border-radius: 3px;
+      white-space: nowrap;
+    }
+
+    /* ── Subnets ──────────────────────────────────── */
+    .public-subnets {
+      border: 2px dashed #d4a017;
+      border-radius: 8px;
+      padding: 12px;
+      background: rgba(212,160,23,0.08);
+      min-width: 170px;
+    }
+
+    .private-subnets {
+      border: 2px dashed #2e7d32;
+      border-radius: 8px;
+      padding: 12px;
+      background: rgba(46,125,50,0.08);
+      flex: 1;
+    }
+
+    .subnet-label {
+      font-size: 10px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+
+    .public-subnets .subnet-label  { color: #d4a017; }
+    .private-subnets .subnet-label { color: #4caf50; }
+
+    .private-inner {
+      display: flex;
+      gap: 12px;
+    }
+
+    /* ── S3 row ───────────────────────────────────── */
+    .s3-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* ── Generic box ──────────────────────────────── */
+    .box {
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: #fff;
+      border: 1.5px solid;
+      background: #1a1a2e;
+    }
+
+    .box-title {
+      font-weight: bold;
+      font-size: 13px;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .box-detail {
+      font-size: 11px;
+      color: #bbbbbb;
+      line-height: 1.6;
+    }
+
+    /* ── Service colours ──────────────────────────── */
+    .github   { border-color: #6e40c9; background: #1a1240; }
+    .iam      { border-color: #dd344c; }
+    .cw       { border-color: #e7157b; }
+    .sns      { border-color: #e74c3c; }
+    .igw      { border-color: #f39c12; }
+    .nat      { border-color: #f39c12; }
+    .eks      { border-color: #326CE5; }
+    .mwaa     { border-color: #00adb5; }
+    .s3       { border-color: #8e44ad; }
+    .sqs      { border-color: #e67e22; }
+    .backend  { border-color: #7f8c8d; }
+    .secrets  { border-color: #e67e22; }
+    .ecr      { border-color: #1abc9c; }
+
+    /* ── Connectors ───────────────────────────────── */
+    .connector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #aaa;
+      font-size: 20px;
+      padding: 0 4px;
+    }
+
+    .connector-v {
+      text-align: center;
+      color: #aaa;
+      font-size: 18px;
+      margin: 4px 0;
+    }
+
+    /* ── Tags ─────────────────────────────────────── */
+    .tag {
+      display: inline-block;
+      font-size: 10px;
+      padding: 1px 5px;
+      border-radius: 3px;
+      margin-top: 3px;
+      margin-right: 3px;
+      border: 1px solid;
+    }
+
+    .az-tag  { color:#4caf50; border-color:#4caf50; }
+    .hyp-tag { color:#f39c12; border-color:#f39c12; }
+
+    .arrow-label {
+      font-size: 10px;
+      color: #f39c12;
+      text-align: center;
+      margin: 2px 0;
+    }
+
+    .section-gap { margin-bottom: 10px; }
+
+    /* ── Connection flow panel ────────────────────── */
+    .flow-panel {
+      border: 1px solid #2a2a4a;
+      border-radius: 8px;
+      padding: 12px 16px;
+      background: #0d0d1f;
+      margin-bottom: 14px;
+    }
+
+    .flow-title {
+      font-size: 11px;
+      font-weight: bold;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+
+    .flow-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .flow-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+    }
+
+    .flow-node {
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid;
+      white-space: nowrap;
+      font-size: 11px;
+    }
+
+    .flow-arrow {
+      color: #555;
+      font-size: 14px;
+    }
+
+    .flow-desc {
+      color: #888;
+      font-size: 10px;
+      font-style: italic;
+    }
+
+    /* ── Legend ───────────────────────────────────── */
+    .legend {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+      justify-content: center;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #aaa;
+    }
+
+    .legend-line { width: 30px; height: 2px; }
+    .solid-line  { background: #aaa; }
+    .dashed-line { background: repeating-linear-gradient(90deg,#aaa 0,#aaa 4px,transparent 4px,transparent 8px); }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <h1>Data Platform — AWS Infrastructure Architecture</h1>
+  <p class="subtitle">ap-south-1 &nbsp;|&nbsp; Terraform &nbsp;|&nbsp; GitHub Actions CI/CD &nbsp;|&nbsp; EKS + MWAA</p>
+
+  <div class="outer">
+
+    <!-- ── Left: GitHub ──────────────────────────────── -->
+    <div class="left-col">
+
+      <div class="box github">
+        <div class="box-title">&#128279; GitHub Repo</div>
+        <div class="box-detail">
+          sarangtagad-git/<br/>data-platform-terraform
+        </div>
+      </div>
+
+      <div class="connector-v">&#8595;</div>
+
+      <div class="box github">
+        <div class="box-title">&#9881; GitHub Actions</div>
+        <div class="box-detail">
+          Push → apply<br/>
+          PR → plan<br/>
+          dispatch → destroy
+        </div>
+      </div>
+
+      <div class="connector-v">&#8595;</div>
+      <div class="arrow-label">OIDC Token<br/>(no static keys)</div>
+      <div class="connector-v">&#8595;</div>
+
+      <div class="box iam">
+        <div class="box-title">&#128274; OIDC Role</div>
+        <div class="box-detail">
+          github-actions<br/>
+          AdministratorAccess<br/>
+          Session: 2h
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Right: AWS Cloud ──────────────────────────── -->
+    <div class="aws-cloud">
+      <div class="aws-badge">&#9729; AWS Cloud — ap-south-1</div>
+
+      <!-- Top row -->
+      <div class="aws-top-row section-gap">
+
+        <div class="box iam">
+          <div class="box-title">&#128274; IAM Roles</div>
+          <div class="box-detail">
+            EKS Cluster Role<br/>
+            EKS Node Group Role<br/>
+            MWAA Execution Role<br/>
+            GitHub Actions OIDC Role
+          </div>
+        </div>
+
+        <div class="box cw">
+          <div class="box-title">&#128202; CloudWatch</div>
+          <div class="box-detail">
+            Dashboard<br/>
+            MWAA SchedulerHeartbeat<br/>
+            EKS CPU Alarm<br/>
+            S3 4xx Alarms
+          </div>
+        </div>
+
+        <div class="box sns">
+          <div class="box-title">&#128276; SNS</div>
+          <div class="box-detail">
+            data-platform-dev-alerts<br/>
+            Email → yourteam@gmail.com
+          </div>
+        </div>
+
+        <div class="box backend">
+          <div class="box-title">&#128230; TF Backend</div>
+          <div class="box-detail">
+            S3: terraform state<br/>
+            DynamoDB: state lock
+          </div>
+        </div>
+
+      </div>
+
+      <!-- VPC + Right Services side by side -->
+      <div class="vpc-and-services">
+
+        <!-- VPC -->
+        <div class="vpc">
+          <div class="vpc-badge">VPC — 10.0.0.0/16</div>
+
+          <div class="vpc-inner">
+
+            <!-- Public Subnets -->
+            <div class="public-subnets">
+              <div class="subnet-label">Public Subnets</div>
+              <div class="box-detail" style="font-size:10px; color:#d4a017; margin-bottom:8px;">
+                10.0.1.0/24 &nbsp;10.0.2.0/24 &nbsp;10.0.3.0/24
+              </div>
+
+              <div class="box igw section-gap">
+                <div class="box-title">&#127760; Internet Gateway</div>
+                <div class="box-detail">Inbound internet traffic</div>
+              </div>
+
+              <div class="connector-v">&#8597;</div>
+
+              <div class="box nat">
+                <div class="box-title">&#128260; NAT Gateway</div>
+                <div class="box-detail">
+                  Single NAT (dev)<br/>
+                  Outbound only<br/>
+                  Package downloads<br/>
+                  API calls
+                </div>
+              </div>
+            </div>
+
+            <!-- Arrow -->
+            <div class="connector" style="flex-direction:column; font-size:13px;">
+              <div style="color:#f39c12;">&#8592;&#8594;</div>
+              <div style="font-size:9px; color:#f39c12; text-align:center;">outbound<br/>traffic</div>
+            </div>
+
+            <!-- Private Subnets -->
+            <div class="private-subnets">
+              <div class="subnet-label">Private Subnets</div>
+              <div class="box-detail" style="font-size:10px; color:#4caf50; margin-bottom:8px;">
+                10.0.11.0/24 &nbsp;10.0.12.0/24 &nbsp;10.0.13.0/24
+              </div>
+
+              <div class="private-inner">
+
+                <!-- EKS -->
+                <div style="flex:1;">
+                  <div class="box eks">
+                    <div class="box-title">&#9096; EKS Cluster v1.32</div>
+                    <div class="box-detail">
+                      Control Plane (managed)<br/><br/>
+                      <b>Node Group: Primary</b><br/>
+                      t3.small · 1–3 nodes<br/>
+                      <span class="tag az-tag">AZ-a</span><span class="tag az-tag">AZ-b</span><span class="tag az-tag">AZ-c</span><br/><br/>
+                      <b>Node Group: Secondary</b><br/>
+                      t3.medium · 1–2 nodes<br/><br/>
+                      Add-ons:<br/>
+                      coredns · vpc-cni · kube-proxy<br/><br/>
+                      <span style="color:#1abc9c; font-size:10px;">&#8592; pulls image from ECR</span>
+                    </div>
+                  </div>
+
+                  <div class="connector-v" style="color:#f39c12;">&#8595;</div>
+                  <div class="arrow-label" style="font-size:9px;">
+                    KubernetesPodOperator<br/>
+                    <span style="color:#888;">(configured via<br/>EKS Access Entry)</span>
+                  </div>
+                  <div class="connector-v" style="color:#f39c12;">&#8595;</div>
+                </div>
+
+                <div class="connector" style="font-size:14px; color:#f39c12;">&#8594;</div>
+
+                <!-- MWAA -->
+                <div style="flex:1;">
+                  <div class="box mwaa">
+                    <div class="box-title">&#128268; MWAA — Airflow 2.8.1</div>
+                    <div class="box-detail">
+                      Class: mw1.small<br/>
+                      Workers: 1–3 (auto-scale)<br/>
+                      Webserver: PUBLIC_ONLY<br/><br/>
+                      <b>Components:</b><br/>
+                      Scheduler · Worker(s) · Webserver<br/><br/>
+                      <b>Security Group:</b><br/>
+                      Self-referencing ingress<br/>
+                      All egress open<br/><br/>
+                      <span class="tag az-tag">AZ-a</span><span class="tag az-tag">AZ-b</span>
+                      <span class="tag hyp-tag">2 subnets max</span><br/><br/>
+                      <span style="color:#e67e22; font-size:10px;">&#8594; reads kubeconfig from Secrets Manager</span><br/>
+                      <span style="color:#1abc9c; font-size:10px;">&#8594; triggers pod on EKS via kubeconfig</span>
+                    </div>
+                  </div>
+
+                  <div class="connector-v">&#8595;</div>
+                  <div class="box sqs">
+                    <div class="box-title">&#128229; SQS</div>
+                    <div class="box-detail">airflow-celery-*<br/>Internal task queue<br/>Scheduler → Workers</div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Services Column -->
+        <div class="right-services">
+
+          <!-- Secrets Manager -->
+          <div class="service-connection">
+            <div style="font-size:10px; color:#e67e22; text-align:center; margin-bottom:4px;">
+              &#8592;&#8592; MWAA reads at task runtime
+            </div>
+            <div class="box secrets">
+              <div class="box-title">&#128274; Secrets Manager</div>
+              <div class="box-detail">
+                <b>eks-kubeconfig</b><br/>
+                Contains EKS API endpoint<br/>
+                + CA certificate<br/>
+                + exec token auth<br/><br/>
+                MWAA worker fetches this<br/>
+                before each K8s pod task
+              </div>
+            </div>
+          </div>
+
+          <!-- Divider -->
+          <div style="border-top:1px dashed #2a2a4a; margin: 4px 0;"></div>
+
+          <!-- ECR -->
+          <div class="service-connection">
+            <div style="font-size:10px; color:#1abc9c; text-align:center; margin-bottom:4px;">
+              &#8592;&#8592; EKS pulls image to run task
+            </div>
+            <div class="box ecr">
+              <div class="box-title">&#128736; ECR</div>
+              <div class="box-detail">
+                <b>etl-job:latest</b><br/>
+                Docker image with<br/>
+                task code + dependencies<br/><br/>
+                Scan on push enabled<br/>
+                Lifecycle: keep last 10
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Connection Flow Panel -->
+      <div class="flow-panel">
+        <div class="flow-title">&#128268; MWAA → EKS Task Execution Flow</div>
+        <div class="flow-rows">
+
+          <div class="flow-row">
+            <div class="flow-node" style="border-color:#00adb5; color:#00adb5;">MWAA Scheduler</div>
+            <div class="flow-arrow">&#8594;</div>
+            <div class="flow-node" style="border-color:#e67e22; color:#e67e22;">Secrets Manager</div>
+            <div class="flow-arrow">&#8594;</div>
+            <div class="flow-node" style="border-color:#aaa; color:#aaa;">reads EKS kubeconfig</div>
+            <div class="flow-desc">&nbsp;(fetches cluster endpoint + auth token)</div>
+          </div>
+
+          <div class="flow-row">
+            <div class="flow-node" style="border-color:#00adb5; color:#00adb5;">MWAA Worker</div>
+            <div class="flow-arrow">&#8594;</div>
+            <div class="flow-node" style="border-color:#326CE5; color:#326CE5;">EKS API Server</div>
+            <div class="flow-arrow">&#8594;</div>
+            <div class="flow-node" style="border-color:#aaa; color:#aaa;">KubernetesPodOperator spawns pod</div>
+            <div class="flow-desc">&nbsp;(auth via EKS Access Entry → K8s RBAC)</div>
+          </div>
+
+          <div class="flow-row">
+            <div class="flow-node" style="border-color:#326CE5; color:#326CE5;">EKS Node</div>
+            <div class="flow-arrow">&#8594;</div>
+            <div class="flow-node" style="border-color:#1abc9c; color:#1abc9c;">ECR</div>
+            <div class="flow-arrow">&#8594;</div>
+            <div class="flow-node" style="border-color:#aaa; color:#aaa;">pulls etl-job Docker image</div>
+            <div class="flow-desc">&nbsp;(runs task container, streams logs back to Airflow)</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- S3 row -->
+      <div class="s3-row">
+        <div style="font-size:10px; color:#8e44ad; font-weight:bold; align-self:center; margin-right:4px;">
+          S3<br/>(VPC<br/>Endpoint)
+        </div>
+
+        <div class="box s3" style="flex:1;">
+          <div class="box-title">&#128193; DAGs Bucket</div>
+          <div class="box-detail">
+            data-platform-dev-airflow-dags<br/>
+            dags/ folder · Versioning: Enabled<br/>
+            <i>&#8592; MWAA reads DAG files from here</i>
+          </div>
+        </div>
+
+        <div class="connector" style="font-size:14px; color:#aaa;">&#8596;</div>
+
+        <div class="box s3" style="flex:1;">
+          <div class="box-title">&#128202; Data Lake Bucket</div>
+          <div class="box-detail">
+            data-platform-dev-data-lake-*<br/>
+            raw/ &nbsp;processed/ · Versioning · Lifecycle · Encryption<br/>
+            <i>&#8594; DAG tasks write/read data here</i>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-line solid-line"></div>
+      Actual connection
+    </div>
+    <div class="legend-item">
+      <div class="legend-line dashed-line"></div>
+      Configured but needs DAG code (KubernetesPodOperator)
+    </div>
+    <div class="legend-item">
+      <span style="color:#e67e22;">&#9650;</span> MWAA → Secrets Manager (reads EKS kubeconfig at runtime)
+    </div>
+    <div class="legend-item">
+      <span style="color:#1abc9c;">&#9650;</span> EKS → ECR (pulls Docker image to run task container)
+    </div>
+    <div class="legend-item">
+      <span style="color:#e7157b;">&#9650;</span> MWAA → CloudWatch (logs + SchedulerHeartbeat metrics)
+    </div>
+    <div class="legend-item">
+      <span style="color:#e74c3c;">&#9650;</span> CloudWatch Alarm → SNS → Email alert
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

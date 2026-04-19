@@ -49,6 +49,24 @@ resource "aws_eks_node_group" "main" {
 #   kube-proxy — network rules on each worker node
 # depends_on ensures node groups are ready before add-ons are installed
 # =============================================================================
+# =============================================================================
+# EKS Access Entry for MWAA
+# Grants the MWAA execution role access to the EKS cluster
+# Maps the IAM role to Kubernetes username "mwaa-user"
+# The RoleBinding in kubernetes/airflow-rbac.yaml binds this username to
+# the airflow-pod-role — allowing MWAA to create/delete pods via KubernetesPodOperator
+# =============================================================================
+resource "aws_eks_access_entry" "mwaa" {
+  cluster_name  = aws_eks_cluster.main.name
+  principal_arn = var.mwaa_role_arn
+  username      = "mwaa-user"
+  type          = "STANDARD"
+
+  tags = merge(local.common_tags, {
+    Name = "${var.project_name}-${var.environment}-mwaa-eks-access"
+  })
+}
+
 resource "aws_eks_addon" "main" {
   for_each = toset(["vpc-cni", "coredns", "kube-proxy"])
 
