@@ -11,7 +11,7 @@ A production-grade AWS data platform built with Terraform, deployed via GitHub A
 | Cloud | AWS (ap-south-1) |
 | IaC | Terraform |
 | CI/CD | GitHub Actions (OIDC — no static keys) |
-| Orchestration | Apache Airflow (AWS MWAA v2.8.1) |
+| Orchestration | Apache Airflow (AWS MWAA v3.0.6) |
 | Containers | Amazon EKS v1.32 |
 | Storage | Amazon S3 |
 | Monitoring | CloudWatch + SNS |
@@ -26,6 +26,7 @@ A production-grade AWS data platform built with Terraform, deployed via GitHub A
 - All infrastructure provisioned as code — nothing created manually in console
 - OIDC-based authentication for GitHub Actions — no static AWS credentials stored
 - Least-privilege IAM — each service has its own scoped role
+- IRSA (IAM Roles for Service Accounts) — EKS pods get temporary AWS credentials via OIDC token exchange, no hardcoded keys inside containers
 - Private subnets for EKS and MWAA — no direct internet exposure
 - Single NAT Gateway for dev, extendable to per-AZ for production
 
@@ -106,7 +107,7 @@ data-platform-terraform/
 │       └── locals.tf
 │
 ├── kubernetes/
-│   └── airflow-rbac.yaml          # K8s Namespace + Role + RoleBinding for MWAA pods
+│   └── airflow-rbac.yaml          # K8s Namespace + Role + RoleBinding + IRSA ServiceAccount for MWAA pods
 │
 ├── scripts/
 │   ├── upload_dag.py              # Upload DAG files to S3
@@ -132,6 +133,7 @@ data-platform-terraform/
 - EKS Node Group Role — worker node + CNI + ECR policies
 - MWAA Execution Role — S3, CloudWatch, SQS, KMS, Secrets Manager (least privilege inline policy)
 - GitHub Actions OIDC Role — allows keyless authentication from GitHub Actions
+- ETL Pod Role (IRSA) — scoped S3 write access for the `etl-job` pod; assumed via OIDC token exchange (no credentials stored in the container)
 
 ### `s3-data-lake`
 - Versioning enabled
@@ -144,13 +146,16 @@ data-platform-terraform/
 - Primary node group — `t3.small`, 1–3 nodes
 - Secondary node group — `t3.medium`, 1–2 nodes
 - Add-ons — `coredns`, `vpc-cni`, `kube-proxy`
+- OIDC provider — prerequisite for IRSA; allows pods to exchange Kubernetes tokens for temporary AWS credentials
+- EKS Access Entry for MWAA — maps MWAA IAM role to Kubernetes username `mwaa-user` (no aws-auth ConfigMap editing required)
 
 ### `airflow`
-- AWS MWAA v2.8.1 — `mw1.small`
+- AWS MWAA v3.0.6 — `mw1.small`
 - DAGs S3 bucket with versioning
 - Workers auto-scale 1–3 based on task queue depth
 - Self-referencing security group for worker communication
 - Webserver access mode: `PUBLIC_ONLY` (IAM auth protected)
+- `apache-airflow-providers-cncf-kubernetes` installed via `requirements.txt` for `KubernetesPodOperator` support
 
 ### `ecr`
 - ECR repository for EKS task container images (`etl-job`)

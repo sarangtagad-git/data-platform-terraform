@@ -20,3 +20,12 @@ Thumbs.db
 # Python
 __pycache__/
 *.pyc
+
+# Kubeconfig files — never commit these, contain cluster credentials
+kubeconfig*
+*.kubeconfig
+kube_config*
+
+# Local Airflow environment variables — contains AWS keys
+airflow_local/.env
+.env
