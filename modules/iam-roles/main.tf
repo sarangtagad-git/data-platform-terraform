@@ -62,6 +62,28 @@ resource "aws_iam_role_policy_attachment" "eks_ecr_readonly" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
+# Allows EKS pods to write ETL results to the S3 data lake
+resource "aws_iam_role_policy" "eks_node_s3_data_lake" {
+  name = "${var.project_name}-${var.environment}-eks-node-s3"
+  role = aws_iam_role.eks_node_group.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:ListBucket"
+      ]
+      Resource = [
+        "arn:aws:s3:::${var.project_name}-${var.environment}-data-lake",
+        "arn:aws:s3:::${var.project_name}-${var.environment}-data-lake/*"
+      ]
+    }]
+  })
+}
+
 # ------------------------------------------------------------------------------
 # MWAA (AIRFLOW) EXECUTION ROLE
 # ------------------------------------------------------------------------------
