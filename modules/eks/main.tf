@@ -7,8 +7,14 @@ resource "aws_eks_cluster" "main" {
   role_arn = var.eks_cluster_role_arn
   version  = var.cluster_version
 
-  vpc_config {    
+  vpc_config {
     subnet_ids = var.private_subnet_ids
+  }
+
+  # Required for aws_eks_access_entry — default mode (CONFIG_MAP) does not support it
+  # API_AND_CONFIG_MAP keeps backward compatibility while enabling the Access Entry API
+  access_config {
+    authentication_mode = "API_AND_CONFIG_MAP"
   }
 
   tags = merge(local.common_tags, {
