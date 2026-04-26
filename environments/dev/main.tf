@@ -10,11 +10,25 @@ terraform {
       source  = "hashicorp/tls"
       version = "~> 4.0"
     }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~> 2.0"
+    }  
   }
 }
 
 provider "aws" {
   region = var.aws_region
+}
+
+provider "kubernetes" {
+  host                   = module.eks.cluster_endpoint
+  cluster_ca_certificate = base64decode(module.eks.cluster_ca_certificate)
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    command     = "aws"
+    args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name, "--region", var.aws_region]
+  }
 }
 
 # =============================================================================
@@ -208,4 +222,63 @@ resource "aws_iam_role_policy" "etl_pod_s3" {
       ]
     }]
   })
+}
+
+# =============================================================================
+# Kubernetes RBAC — Namespace, Role, RoleBinding, ServiceAccount
+# Replaces manual kubectl apply -f kubernetes/airflow-rbac.yaml
+# depends_on ensures EKS cluster and nodes are ready before K8s resources
+# =============================================================================
+resource "kubernetes_namespace" "airflow" {
+  metadata {
+    name = "airflow"
+    labels = {
+      managed-by = "terraform"
+      purpose    = "airflow-tasks"
+    }
+  }
+
+  depends_on = [module.eks]
+}
+
+resource "kubernetes_role" "airflow_pod_role" {
+  metadata {
+    name      = "airflow-pod-role"
+    namespace = kubernetes_namespace.airflow.metadata[0].name
+  }
+
+  rule {
+    api_groups = [""]
+    resources  = ["pods", "pods/log", "events"]
+    verbs      = ["get", "list", "watch", "create", "delete", "patch"]
+  }
+}
+
+resource "kubernetes_role_binding" "airflow_pod_rolebinding" {
+  metadata {
+    name      = "airflow-pod-rolebinding"
+    namespace = kubernetes_namespace.airflow.metadata[0].name
+  }
+
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "Role"
+    name      = kubernetes_role.airflow_pod_role.metadata[0].name
+  }
+
+  subject {
+    kind      = "User"
+    name      = "mwaa-user"
+    api_group = "rbac.authorization.k8s.io"
+  }
+}
+
+resource "kubernetes_service_account" "etl_job_sa" {
+  metadata {
+    name      = "etl-job-sa"
+    namespace = kubernetes_namespace.airflow.metadata[0].name
+    annotations = {
+      "eks.amazonaws.com/role-arn" = aws_iam_role.etl_pod.arn
+    }
+  }
 }

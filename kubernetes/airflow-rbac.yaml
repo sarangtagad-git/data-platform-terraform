@@ -1,8 +1,10 @@
 # =============================================================================
-# Airflow RBAC — Kubernetes Namespace + Role + RoleBinding
+# Airflow RBAC — Kubernetes Namespace + Role + RoleBinding + ServiceAccount
 #
-# Apply this after EKS cluster is running:
-#   kubectl apply -f kubernetes/airflow-rbac.yaml
+# NOTE: These resources are now managed by Terraform via the kubernetes provider.
+# This file is kept as reference only — do NOT apply it manually.
+# See: environments/dev/main.tf (kubernetes_namespace, kubernetes_role,
+#      kubernetes_role_binding, kubernetes_service_account blocks)
 #
 # How it connects to MWAA:
 #   1. Terraform creates an EKS Access Entry mapping the MWAA IAM role
