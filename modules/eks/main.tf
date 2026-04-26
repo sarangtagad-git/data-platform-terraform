@@ -126,3 +126,29 @@ resource "aws_eks_access_policy_association" "admin" {
     type = "cluster"
   }
 }
+
+# =============================================================================
+# EKS Access Entry for GitHub Actions
+# Grants the GitHub Actions OIDC role cluster-admin access so Terraform can
+# apply Kubernetes resources (namespace, RBAC, ServiceAccount) via the
+# kubernetes provider during CI/CD runs
+# =============================================================================
+resource "aws_eks_access_entry" "github_actions" {
+  cluster_name  = aws_eks_cluster.main.name
+  principal_arn = var.github_actions_role_arn
+  type          = "STANDARD"
+
+  tags = merge(local.common_tags, {
+    Name = "${var.project_name}-${var.environment}-github-actions-eks-access"
+  })
+}
+
+resource "aws_eks_access_policy_association" "github_actions" {
+  cluster_name  = aws_eks_cluster.main.name
+  principal_arn = var.github_actions_role_arn
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+
+  access_scope {
+    type = "cluster"
+  }
+}

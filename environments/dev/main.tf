@@ -103,6 +103,7 @@ module "eks" {
   eks_node_group_role_arn = module.iam_roles.eks_node_group_role_arn
   mwaa_role_arn           = module.iam_roles.mwaa_role_arn
   admin_iam_arn           = var.admin_iam_arn
+  github_actions_role_arn = module.iam_roles.github_actions_role_arn
   tags                    = var.tags
 }
 

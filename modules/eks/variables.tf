@@ -73,6 +73,11 @@ variable "admin_iam_arn" {
   type        = string
 }
 
+variable "github_actions_role_arn" {
+  description = "ARN of the GitHub Actions OIDC IAM role — needs cluster admin access to apply Kubernetes resources via Terraform"
+  type        = string
+}
+
 variable "tags" {
   description = "Additional key-value pair tags to be applied to all resources"
   type = map(string)
