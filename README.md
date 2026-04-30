@@ -28,7 +28,7 @@ A production-grade AWS data platform built with Terraform, deployed via GitHub A
 - Least-privilege IAM — each service has its own scoped role
 - IRSA (IAM Roles for Service Accounts) — EKS pods get temporary AWS credentials via OIDC token exchange, no hardcoded keys inside containers
 - Private subnets for EKS and MWAA — no direct internet exposure
-- Single NAT Gateway for dev, extendable to per-AZ for production
+- Single NAT Gateway in dev/staging, one NAT per AZ in prod — full HA without code changes, driven by `single_nat_gateway` variable
 
 ---
 
@@ -48,8 +48,18 @@ data-platform-terraform/
 │   │   ├── variables.tf           # Variable declarations
 │   │   ├── outputs.tf             # Environment-level outputs
 │   │   └── terraform.tfvars       # Dev-specific values
-│   ├── staging/                   # Staging environment (backend only)
-│   └── prod/                      # Production environment (backend only)
+│   ├── staging/                   # Staging environment
+│   │   ├── backend.tf             # S3 + DynamoDB remote state (staging key)
+│   │   ├── main.tf                # Root module — same structure as dev
+│   │   ├── variables.tf           # Variable declarations
+│   │   ├── outputs.tf             # Environment-level outputs
+│   │   └── terraform.tfvars       # Staging-specific values
+│   └── prod/                      # Production environment
+│       ├── backend.tf             # S3 + DynamoDB remote state (prod key)
+│       ├── main.tf                # Root module — same structure as dev
+│       ├── variables.tf           # Variable declarations
+│       ├── outputs.tf             # Environment-level outputs
+│       └── terraform.tfvars       # Prod-specific values
 │
 ├── modules/
 │   ├── networking/                # VPC, subnets, IGW, NAT GW, route tables
@@ -121,10 +131,10 @@ data-platform-terraform/
 ## Modules
 
 ### `networking`
-- VPC with CIDR `10.0.0.0/16`
+- VPC per environment — non-overlapping CIDRs (`10.0/16` dev, `10.1/16` staging, `10.2/16` prod) — enables VPC peering without address conflicts
 - 3 public subnets + 3 private subnets across AZs (ap-south-1a/b/c)
 - Internet Gateway for public subnets
-- NAT Gateway for private subnet outbound traffic
+- NAT Gateway for private subnet outbound traffic (`single_nat_gateway = false` in prod for AZ-level HA)
 - S3 VPC Endpoint for private S3 access without NAT
 - VPC Flow Logs for network visibility
 
@@ -138,21 +148,23 @@ data-platform-terraform/
 ### `s3-data-lake`
 - Versioning enabled
 - Server-side encryption (AES-256)
-- Lifecycle rules — transition to Glacier after 90 days, expire raw data after 364 days
+- Lifecycle rules — transition to Glacier after 90 days; raw data expiry: 364 days (dev), 180 days (staging), 730 days (prod)
 - Public access fully blocked
+- `force_destroy = true` in dev only — prod and staging buckets are protected from accidental `terraform destroy`
 
 ### `eks`
 - EKS v1.32 cluster
-- Primary node group — `t3.small`, 1–3 nodes
-- Secondary node group — `t3.medium`, 1–2 nodes
+- Primary node group — `t3.small` (dev) → `t3.medium` (staging) → `t3.large` (prod)
+- Secondary node group — `t3.medium` (dev) → `t3.large` (staging) → `m5.large` (prod)
 - Add-ons — `coredns`, `vpc-cni`, `kube-proxy`
 - OIDC provider — prerequisite for IRSA; allows pods to exchange Kubernetes tokens for temporary AWS credentials
 - EKS Access Entry for MWAA — maps MWAA IAM role to Kubernetes username `mwaa-user` (no aws-auth ConfigMap editing required)
 
 ### `airflow`
-- AWS MWAA v3.0.6 — `mw1.small`
+- AWS MWAA v3.0.6
+- Environment class: `mw1.small` (dev) → `mw1.medium` (staging) → `mw1.large` (prod)
 - DAGs S3 bucket with versioning
-- Workers auto-scale 1–3 based on task queue depth
+- Workers auto-scale: 1–3 (dev), 2–5 (staging), 3–10 (prod) based on task queue depth
 - Self-referencing security group for worker communication
 - Webserver access mode: `PUBLIC_ONLY` (IAM auth protected)
 - `apache-airflow-providers-cncf-kubernetes` installed via `requirements.txt` for `KubernetesPodOperator` support
@@ -169,8 +181,28 @@ data-platform-terraform/
 
 ### `monitoring`
 - CloudWatch dashboard — MWAA heartbeat, EKS CPU, S3 errors
-- Alarms — MWAA SchedulerHeartbeat, EKS CPU > 90%, S3 4xx errors
+- Alarms — MWAA SchedulerHeartbeat, EKS CPU, S3 4xx errors
+- Alert thresholds: 90% (dev) → 80% (staging) → 70% (prod) — tighter as environment criticality increases
 - SNS topic with email subscription for alert notifications
+
+---
+
+## Environments
+
+| Setting | dev | staging | prod |
+|---|---|---|---|
+| VPC CIDR | `10.0.0.0/16` | `10.1.0.0/16` | `10.2.0.0/16` |
+| EKS primary | `t3.small` | `t3.medium` | `t3.large` |
+| EKS secondary | `t3.medium` | `t3.large` | `m5.large` |
+| MWAA class | `mw1.small` | `mw1.medium` | `mw1.large` |
+| MWAA workers | 1–3 | 2–5 | 3–10 |
+| NAT gateway | single | single | per-AZ (HA) |
+| Alarm threshold | 90% | 80% | 70% |
+| Data retention | 364 days | 180 days | 730 days |
+| `force_destroy` | `true` | `false` | `false` |
+| State key | `dev/terraform.tfstate` | `staging/terraform.tfstate` | `prod/terraform.tfstate` |
+
+All three environments share the same module structure and Terraform code. Differences are driven entirely by `terraform.tfvars` — no module duplication.
 
 ---
 
@@ -197,6 +229,7 @@ workflow_dispatch  →  apply or destroy (manual trigger)
 
 ## Deploy
 
+**Dev** (automated via GitHub Actions on push to `main`):
 ```bash
 cd environments/dev
 terraform init
@@ -204,17 +237,28 @@ terraform plan
 terraform apply
 ```
 
-Or push to `main` branch — GitHub Actions handles it automatically.
+**Staging / Prod** (run locally or extend the CI/CD workflow with environment targeting):
+```bash
+cd environments/staging   # or environments/prod
+terraform init
+terraform plan
+terraform apply
+```
 
 ---
 
 ## Destroy
 
 ```bash
-# Via GitHub Actions (recommended)
-# Go to Actions → Terraform CI/CD → Run workflow → select "destroy"
+# Remove Kubernetes resources from state first (avoids provider init issue on destroy)
+cd environments/dev   # or staging / prod
+terraform state rm kubernetes_service_account.etl_job_sa
+terraform state rm kubernetes_role_binding.airflow_pod_rolebinding
+terraform state rm kubernetes_role.airflow_pod_role
+terraform state rm kubernetes_namespace.airflow
 
-# Or locally
-cd environments/dev
-terraform destroy
+# Then destroy the rest
+terraform destroy -auto-approve
 ```
+
+> **Note:** prod and staging S3 data lake buckets have `force_destroy = false` — they must be emptied manually before `terraform destroy` will succeed. This is intentional to prevent accidental data loss.
